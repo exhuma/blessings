@@ -14,9 +14,10 @@ from curses import tigetstr, tparm
 from functools import partial
 from StringIO import StringIO
 import sys
+import os
 
 from nose import SkipTest
-from nose.tools import eq_
+from nose.tools import eq_, assert_in
 
 # This tests that __all__ is correct, since we use below everything that should
 # be imported:
@@ -254,3 +255,29 @@ def test_force_styling_none():
     """If ``force_styling=None`` is passed to the constructor, don't ever do styling."""
     t = TestTerminal(force_styling=None)
     eq_(t.save, '')
+
+
+def test_256color():
+    """Test 256 Color Support"""
+    if os.name != "posix":
+        # Blatantly assuming this won't work on non-posix systems.
+        raise SkipTest
+
+    t = TestTerminal()
+
+    for x in range(8):
+        assert_in(unicode(x + 30), t.color(x))
+
+    for x in range(8):
+        assert_in(unicode(x + 90), t.color(x + 8))
+
+    for x in range(16, 255):
+        assert_in(unicode(x), t.color(x))
+
+
+def test_approximate_color():
+    """Test Approximate Colors"""
+    t = TestTerminal()
+    assert_in(u'196m', t.approximate_rgb(255, 0, 0))
+    assert_in(u'46m', t.approximate_rgb(0, 255, 0))
+    assert_in(u'21m', t.approximate_rgb(0, 0, 255))
